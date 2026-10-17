@@ -16,7 +16,7 @@ mkdir -p "$target_dir"
 # архив скачиваем в /tmp
 cd /tmp
 # подходящую версию можно найти здесь https://alpinelinux.org/downloads/ (раздел mini root file system)
-curl -LO https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86/alpine-minirootfs-3.24.2-x86.tar.gz
+curl -LO https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/alpine-minirootfs-3.24.2-x86_64.tar.gz
 
 # распаковываем в target_dir
-tar -xzf alpine-minirootfs-3.20.3-x86_64.tar.gz -C "$target_dir"
+tar -xzf alpine-minirootfs-3.24.2-x86_64.tar.gz -C "$target_dir"
