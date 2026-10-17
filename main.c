@@ -219,20 +219,8 @@ int pathExists(const char* path) {
 }
 
 void showParentInfo() {
-    if(system("echo parent id: ") == -1)
-        perror("system echo");
-    if(system("id") == -1)
-        perror("system id");
-    if(system("echo ") == -1)
-        perror("system echo");
-    if(system("echo parent hostname: ") == -1)
-        perror("system echo");
-    if(system("hostname") == -1)
-        perror("system hostname");
-    if(system("echo") == -1)
-        perror("system echo");
-    if(system("echo") == -1)
-        perror("system echo");
+    if(system("echo parent id: ; id ; echo ; echo parent hostname: ; hostname ; echo") == -1)
+        perror("system(id; hostname)");
 }
 
 int main(int argc, char* argv[]) {
