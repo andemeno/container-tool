@@ -146,7 +146,7 @@ int setupIDmapping(pid_t pid) {
 
 int parseMainArgs(int argc, char* argv[], struct Args* child_args, int* show_parent_info) {
     assert(child_args != NULL);
-    assert(show_parent_args != NULL);
+    assert(show_parent_info != NULL);
 
     // аргументы командной строки
     static struct option long_opts[] = {
