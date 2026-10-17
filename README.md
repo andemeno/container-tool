@@ -11,12 +11,14 @@ $ cmake --build ./build
 #### Использование программы
 ```bash
 $ ./container-tool --help
-Usage: ./container-tool --rootfs=PATH [--hostname=NAME] -- PROCESS [PROCESS ARGUMENTS]
+Usage: ./container-tool -r|--rootfs=PATH [-n|--hostname=NAME] [-i|--interactive] [-t|--tty] -- PROCESS [PROCESS ARGUMENTS]
 Performs isolated PROCESS launch via namespaces (PID, mount, user, UTS, IPC, network)
--r, --rootfs=PATH	path to the root file system
--n, --hostn=NAME	name of the host into isolated namespace
--p, --parent		show parent process info
--h, --help		    this message
+	-r, --rootfs=PATH	path to the root file system
+	-i, --interactive	keep STDIN open
+	-t, --tty	        allocate a pseudo-TTY
+	-n, --host=NAME	    name of the host into isolated namespace
+	-p, --parent		show parent process info
+	-h, --help		    this message
 ```
 
 П р и м е ч а н и е: использование программы не требует root-привелегий (запуск без sudo). Однако для моего хоста (Linux 7.0.0-34-generic #34~24.04.1-Ubuntu) потребовалось дополнительная настройка окружения:
@@ -61,7 +63,7 @@ $ ./container-tool --rootfs=/tmp/alpine /bin/ps aux
 PID   USER     TIME  COMMAND
     1 root      0:00 /bin/ps
     
-$ ./container-tool --rootfs=/tmp/alpine --host=isolated --parent /bin/sh
+$ ./container-tool --rootfs=/tmp/alpine --host=isolated --parent -it /bin/sh
 parent id:
 uid=1000(lux) gid=1000(lux) группы=1000(lux),4(adm),20(dialout),24(cdrom),27(sudo),30(dip),46(plugdev),100(users),114(lpadmin),125(vboxusers),126(wireshark),129(sbuild),984(docker)
 
@@ -86,3 +88,17 @@ isolated
  - изолированы на сетевом уровне (network) (имеют различные имена хостов, в контейнере есть только loopback сетевой интерфейс).
 
 `procfs` - это файловая система, которая дает доступ к структурам данных ядра и информации о работающих процессах, она привязан к PID-пространству того, кто её монтирует. Если попытаться смонтировать `procfs` без изоляции mount-пространства, то новая `procfs` появится в общем дереве монтирований хоста. Поскольку мы изолировали контейнер по PID, то идентификаторы процессов контейнера могуг дублировать идентификаторы процессов родителя. Значит хост в `/proc/1`  увидит процесс из PID-пространства контейнера, а хостовый процесс c PID=1 будет затёрт. В итоге, поведение хоста может стать непредсказуемым.
+
+#### Проверка псевдотерминала
+Для проверки следует запустить программу с аргументами -i и -t:
+```bash
+$ ./container-tool --rootfs=/tmp/alpine -ti -- /bin/sh
+```
+Интерактивность проверена на top, vi (входят в состав Alpine, в отличие от htop и vim):
+ - вывод top занимает все окно терминала, утилита завершается по нажатию q;
+ - vi кооректно обрабатывает команды (:i, Esc, :q!).
+Работает автодополнение по Tab.
+Работает прерывание процесса по Ctrl+C (запускаем sleep 100 и жмем Ctrl+C => процесс прерывается).
+Работает завершение дочернего процесса по Ctrl+D (выходим в терминал хоста).
+
+Escape-последовательности - это последовательности байт, начинающиеся с символа Esc (0x1B), которыми обмениваются терминал и приложение. Они используются для управления терминалом. Терминал, встречая Esc-символ, воспринимает следующие символы не как данные, а как команду (и выполняет её). В каноническом режиме работы хостовый терминал передает все введенные символы только после нажатия `Enter`, так же производит обработку управляющих символов и форматирование вывода. Если оставлять терминал хоста в каноническом режиме, Escape-последовательности не будут доходить до slave-конца псевдотерминала. Поэтому приложения, запущенные внутри контейнера не смогут корректно управлять выводом на экран и будут получать искаженные данные.
